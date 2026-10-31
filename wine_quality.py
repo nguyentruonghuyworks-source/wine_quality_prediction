@@ -196,3 +196,61 @@ class LogisticRegression:
     def predict(self, X, threshold=0.5):
         p = self.predict_proba(X)
         return np.where(p >= threshold, 1, 0)
+
+# 6.NHAP LIEU VA DU DOAN
+
+def input_wine_features(feature_names, X_raw):
+    # nhap gia tri cho tung thuoc tinh tu ban phim
+    # hien thi khoang gia tri (min - max) va trung binh trong du lieu de de nhap
+    min_vals = X_raw.min(axis=0)
+    max_vals = X_raw.max(axis=0)
+    mean_vals = X_raw.mean(axis=0)
+
+    values = []
+    for i, name in enumerate(feature_names):
+        while True:
+            text = input("Nhap %s [%.3f - %.3f, tb = %.3f] (Enter = lay tb): "
+                         % (name, min_vals[i], max_vals[i], mean_vals[i]))
+            text = text.strip().replace(",", ".")
+
+            # neu de trong thi lay gia tri trung binh
+            if text == "":
+                values.append(mean_vals[i])
+                break
+
+            try:
+                value = float(text)
+            except ValueError:
+                print("  Gia tri khong hop le, hay nhap lai mot so!")
+                continue
+
+            if value < 0:
+                print("  Gia tri khong duoc am, hay nhap lai!")
+                continue
+
+            # canh bao neu nam ngoai khoang trong du lieu nhung van cho dung
+            if value < min_vals[i] or value > max_vals[i]:
+                print("  Luu y: gia tri nam ngoai khoang du lieu goc, du doan co the kem chinh xac")
+            values.append(value)
+            break
+
+    return np.array(values)
+
+
+def predict_new_wine(x_new, mean, std, perceptron, log_reg):
+    # chuan hoa mau moi bang mean va std cua tap train roi moi dua vao mo hinh
+    x_scaled = ((x_new - mean) / std).reshape(1, -1)
+
+    pred_per = perceptron.predict(x_scaled)[0]
+    pred_log = log_reg.predict(x_scaled)[0]
+    prob_good = log_reg.predict_proba(x_scaled)[0]
+
+    label_text = {1: "GOOD (chat luong tot)", 0: "BAD (chat luong kem)"}
+
+    print()
+    print("----- Ket qua du doan -----")
+    print("Perceptron          :", label_text[pred_per])
+    print("Logistic Regression :", label_text[pred_log])
+    print("  Xac suat good = %.2f%%, bad = %.2f%%" % (prob_good * 100, (1 - prob_good) * 100))
+    print()
+    
