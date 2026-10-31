@@ -2,11 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 # 1.DOC VA TIEN XU LY DU LIEU
 
 def load_data(file_path):
-    # sep=None de pandas tu nhan dang dau phan cach (file goc hay dung ';')
+    # sep=None de pandas tu nhan dang dau phan cach (file goc dung ';')
     data = pd.read_csv(file_path, sep=None, engine="python")
     return data
 
@@ -36,7 +35,6 @@ def standardize(X_train, X_test):
     X_test_scaled = (X_test - mean) / std
     # tra ve them mean va std de sau nay chuan hoa du lieu nguoi dung nhap
     return X_train_scaled, X_test_scaled, mean, std
-
 
 # 2.CAC HAM DANH GIA
 
@@ -74,7 +72,6 @@ def evaluate(y_true, y_pred, name):
     print()
     return acc, precision, recall, f1
 
-
 # 3.VE BIEU DO BANG MATPLOTLIB
 
 def plot_training_curves(errors_history, loss_history):
@@ -99,7 +96,6 @@ def plot_training_curves(errors_history, loss_history):
 
     plt.tight_layout()
     plt.show()  # hien thi truc tiep, dong cua so bieu do thi chuong trinh chay tiep
-
 
 # 4.THUAT TOAN PERCEPTRON
 
@@ -146,3 +142,57 @@ class Perceptron:
     def predict(self, X):
         z = np.dot(X, self.w) + self.b
         return np.where(z >= 0, 1, 0)
+
+# 5.THUAT TOAN LOGISTIC REGRESSION
+
+class LogisticRegression:
+    def __init__(self, learning_rate=0.1, n_iters=1000):
+        self.lr = learning_rate
+        self.n_iters = n_iters
+        self.w = None
+        self.b = 0
+        self.loss_history = []
+
+    def sigmoid(self, z):
+        # clip de tranh bi tran so khi exp(-z) qua lon
+        z = np.clip(z, -500, 500)
+        return 1 / (1 + np.exp(-z))
+
+    def compute_loss(self, y, p):
+        # ham mat mat binary cross-entropy
+        eps = 1e-10
+        loss = -np.mean(y * np.log(p + eps) + (1 - y) * np.log(1 - p + eps))
+        return loss
+
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.w = np.zeros(n_features)
+        self.b = 0
+        self.loss_history = []
+
+        # batch gradient descent
+        for it in range(self.n_iters):
+            z = np.dot(X, self.w) + self.b
+            p = self.sigmoid(z)  # xac suat la good
+
+            # dao ham cua loss theo w va b
+            dw = np.dot(X.T, (p - y)) / n_samples
+            db = np.sum(p - y) / n_samples
+
+            # cap nhat tham so
+            self.w = self.w - self.lr * dw
+            self.b = self.b - self.lr * db
+
+            loss = self.compute_loss(y, p)
+            self.loss_history.append(loss)
+
+            if (it + 1) % 200 == 0:
+                print("Logistic Regression - iter %d, loss = %.4f" % (it + 1, loss))
+
+    def predict_proba(self, X):
+        z = np.dot(X, self.w) + self.b
+        return self.sigmoid(z)
+
+    def predict(self, X, threshold=0.5):
+        p = self.predict_proba(X)
+        return np.where(p >= threshold, 1, 0)
