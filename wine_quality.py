@@ -253,4 +253,66 @@ def predict_new_wine(x_new, mean, std, perceptron, log_reg):
     print("Logistic Regression :", label_text[pred_log])
     print("  Xac suat good = %.2f%%, bad = %.2f%%" % (prob_good * 100, (1 - prob_good) * 100))
     print()
-    
+
+# 7.CHUONG TRINH CHINH
+
+def main():
+    # doc du lieu
+    data = load_data("winequality-red.csv")
+    print("Kich thuoc du lieu:", data.shape)
+
+    # tao nhan: good (1) neu quality >= 5.5, bad (0) neu nguoc lai
+    y = np.where(data["quality"].values >= 5.5, 1, 0)
+    X = data.drop(columns=["quality"]).values.astype(float)
+    feature_names = list(data.drop(columns=["quality"]).columns)
+
+    print("So mau good:", np.sum(y == 1), "| So mau bad:", np.sum(y == 0))
+    print()
+
+    # chia train / test va chuan hoa
+    X_train, X_test, y_train, y_test = split_train_test(X, y, test_ratio=0.2, seed=42)
+    X_train, X_test, mean, std = standardize(X_train, X_test)
+    print("Train:", X_train.shape, "| Test:", X_test.shape)
+    print()
+
+    # huan luyen Perceptron
+    np.random.seed(0)
+    perceptron = Perceptron(learning_rate=0.01, n_epochs=100)
+    perceptron.fit(X_train, y_train)
+    y_pred_per = perceptron.predict(X_test)
+
+    # huan luyen Logistic Regression
+    log_reg = LogisticRegression(learning_rate=0.1, n_iters=1000)
+    log_reg.fit(X_train, y_train)
+    y_pred_log = log_reg.predict(X_test)
+    print()
+
+    # danh gia tren tap test
+    evaluate(y_test, y_pred_per, "Perceptron")
+    evaluate(y_test, y_pred_log, "Logistic Regression")
+
+    # trong so cua logistic regression de xem thuoc tinh nao quan trong
+    print("Trong so Logistic Regression (da chuan hoa):")
+    for name, weight in zip(feature_names, log_reg.w):
+        print("  %-22s %8.4f" % (name, weight))
+    print("  %-22s %8.4f" % ("bias", log_reg.b))
+    print()
+
+    # ve bieu do hien thi truc tiep
+    print("Dang hien thi bieu do, hay dong cua so bieu do de tiep tuc...")
+    plot_training_curves(perceptron.errors_history, log_reg.loss_history)
+
+    # nguoi dung nhap thuoc tinh de du doan
+    print("DU DOAN CHAT LUONG RUOU TU DU LIEU NHAP")
+    while True:
+        x_new = input_wine_features(feature_names, X)
+        predict_new_wine(x_new, mean, std, perceptron, log_reg)
+
+        answer = input("Ban co muon du doan tiep khong? (y/n): ").strip().lower()
+        if answer != "y":
+            print("Ket thuc chuong trinh.")
+            break
+        print()
+
+if __name__ == "__main__":
+    main()
